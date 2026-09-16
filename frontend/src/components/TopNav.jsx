@@ -22,7 +22,6 @@ function TopNav() {
   const [hovered, setHovered] = useState(null);
   const location = useLocation();
 
-  // Auto close menu on route change
   const handleNavClick = () => {
     setOpen(false);
     setHovered(null);
@@ -31,7 +30,6 @@ function TopNav() {
   return (
     <div className="md:hidden fixed top-2 left-2 z-50">
 
-      {/* Menu Button */}
       <button
         onClick={() => {
           setOpen((prev) => !prev);
@@ -46,7 +44,7 @@ function TopNav() {
           text-white text-xl
           shadow-xl
           hover:bg-zinc-800
-          hover:text-rose-300
+          hover:text-(--accent-300)
           active:scale-95
           transition
         "
@@ -54,7 +52,7 @@ function TopNav() {
         {open ? <HiX /> : <HiMenu />}
       </button>
 
-      {/* Navigation */}
+
       {open && (
         <div
           className="
@@ -92,15 +90,14 @@ function TopNav() {
                     active:scale-95
                     transition
                     ${isActive
-                      ? "bg-zinc-700 text-rose-300"
-                      : "text-white hover:bg-zinc-800 hover:text-rose-300"
+                      ? "bg-zinc-700 text-(--accent-400)"
+                      : "text-white hover:bg-zinc-800 hover:text-(--accent-300)"
                     }
                   `}
                 >
                   <Icon />
                 </Link>
 
-                {/* Label tooltip */}
                 {hovered === label && (
                   <span
                     className="

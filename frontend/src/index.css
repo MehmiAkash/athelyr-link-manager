@@ -1,1 +1,65 @@
 @import "tailwindcss";
+
+:root {
+    --accent-100: #f4f4f5;
+    --accent-200: #e4e4e7;
+    --accent-300: #d4d4d8;
+    --accent-400: #a1a1aa;
+    --accent-500: #71717a;
+    --accent-600: #52525b;
+}
+
+/* Base container styling for all screens */
+.Toastify__toast-container {
+  width: 220px !important;
+}
+
+/* Override Toastify's default mobile full-width reset */
+@media only screen and (max-width: 480px) {
+  .Toastify__toast-container {
+    width: 220px !important;
+    left: auto !important;
+    right: 1em !important;
+    top: 1em !important;
+    margin: 0 !important;
+  }
+}
+
+/* Base toast overrides */
+.Toastify__toast {
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  min-height: 38px !important;
+  margin-top: 36px !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  /* Glassmorphism blur for better readability over underlying content */
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+.Toastify__toast-body {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* 50% Transparent Color Themes using 8-digit Hex Codes */
+.Toastify__toast--success {
+  background: #16a34a80 !important; /* Green at 50% opacity */
+  border: 1px solid #16a34a4d !important;
+}
+
+.Toastify__toast--error {
+  background: #dc262680 !important; /* Red at 50% opacity */
+  border: 1px solid #dc26264d !important;
+}
+
+.Toastify__toast--warning {
+  background: #ca8a0480 !important; /* Yellow/Gold at 50% opacity */
+  border: 1px solid #ca8a044d !important;
+}
+
+.Toastify__toast--info {
+  background: #2563eb80 !important; /* Blue at 50% opacity */
+  border: 1px solid #2563eb4d !important;
+}
