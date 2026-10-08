@@ -8,4 +8,8 @@ public class UserSearchResponseDTO {
     private String name;
 
     private String email;
+
+    private String profileImageUrl;
+
+    private String bio;
 }

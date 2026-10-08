@@ -1,5 +1,6 @@
 package com.athelyr.linkmanager.group.mapper;
 
+import com.athelyr.linkmanager.constants.Role;
 import com.athelyr.linkmanager.group.dto.GroupMembersDTO;
 import com.athelyr.linkmanager.group.dto.GroupResponseDTO;
 import com.athelyr.linkmanager.group.dto.GroupsDTO;
@@ -18,7 +19,14 @@ public class GroupMapper {
                     groupMembersDTO.setMemberId(member.getMemberId());
                     groupMembersDTO.setName(member.getUser().getName());
                     groupMembersDTO.setEmail(member.getUser().getEmail());
-                    groupMembersDTO.setRole(member.getRole());
+                    groupMembersDTO.setProfileImageUrl(
+                            member.getUser().getProfileImageUrl()
+                    );
+                    groupMembersDTO.setDob(member.getUser().getDob());
+                    groupMembersDTO.setBio(member.getUser().getBio());
+                    groupMembersDTO.setRole(
+                            member.getRole() == null ? Role.MEMBER : member.getRole()
+                    );
                     return groupMembersDTO;
                 }).toList();
 
@@ -31,7 +39,7 @@ public class GroupMapper {
 
         return responseDTO;
     }
-    public GroupsDTO mapToGroupDTO(Group group) {
+    public GroupsDTO mapToGroupDTO(Group group, Role role) {
 
         GroupsDTO dto = new GroupsDTO();
 
@@ -39,7 +47,7 @@ public class GroupMapper {
         dto.setGroupName(group.getGroupName());
         dto.setDescription(group.getDescription());
         dto.setCreatedAt(group.getCreatedAt());
-
+        dto.setRole(role == null ? Role.MEMBER : role);
         return dto;
     }
 }

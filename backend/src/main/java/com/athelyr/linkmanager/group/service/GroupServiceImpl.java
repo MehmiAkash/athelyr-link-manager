@@ -11,8 +11,11 @@ import com.athelyr.linkmanager.group.entity.GroupMember;
 import com.athelyr.linkmanager.group.mapper.GroupMapper;
 import com.athelyr.linkmanager.group.repository.GroupMemberRepository;
 import com.athelyr.linkmanager.group.repository.GroupRepository;
+import com.athelyr.linkmanager.grouplink.repository.GroupPrivateLinkRepository;
+import com.athelyr.linkmanager.grouplink.repository.GroupShortLinkRepository;
 import com.athelyr.linkmanager.user.entity.User;
 import com.athelyr.linkmanager.user.service.UserService;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -25,11 +28,23 @@ public class GroupServiceImpl implements GroupService {
     private final GroupRepository groupRepository;
     private final UserService userService;
     private final GroupMapper groupMapper;
-    public GroupServiceImpl(GroupMemberRepository groupMemberRepository,GroupRepository groupRepository,UserService userService , GroupMapper groupMapper){
+    private final GroupPrivateLinkRepository groupPrivateLinkRepository;
+    private final GroupShortLinkRepository groupShortLinkRepository;
+
+    public GroupServiceImpl(
+            GroupMemberRepository groupMemberRepository,
+            GroupRepository groupRepository,
+            UserService userService,
+            GroupMapper groupMapper,
+            GroupPrivateLinkRepository groupPrivateLinkRepository,
+            GroupShortLinkRepository groupShortLinkRepository
+    ){
         this.groupMemberRepository=groupMemberRepository;
         this.groupRepository=groupRepository;
         this.userService=userService;
         this.groupMapper= groupMapper;
+        this.groupPrivateLinkRepository = groupPrivateLinkRepository;
+        this.groupShortLinkRepository = groupShortLinkRepository;
     }
 
 
@@ -67,7 +82,9 @@ public class GroupServiceImpl implements GroupService {
         GroupMember newGroupMember = GroupMember.builder()
                 .group(group)
                 .user(addUser)
-                .role(groupMemberRequestDTO.getRole())
+                .role(groupMemberRequestDTO.getRole() == null
+                        ? Role.MEMBER
+                        : groupMemberRequestDTO.getRole())
                 .addedAt(now)
                 .build();
         if(groupMemberRepository.existsByGroupGroupIdAndUserEmail(groupId,groupMemberRequestDTO.getEmail())) {
@@ -134,7 +151,19 @@ public class GroupServiceImpl implements GroupService {
         User user = userService.getUserByAuth(authHeader);
         List<GroupMember> memberships = groupMemberRepository.findByUserUserId(user.getUserId());
         return memberships.stream()
-                .map(member -> groupMapper.mapToGroupDTO(member.getGroup()))
+                .map(member -> groupMapper.mapToGroupDTO(member.getGroup(), member.getRole()))
+                .toList();
+    }
+
+    @Override
+    public List<GroupsDTO> searchGroups(String authHeader, String query) {
+        String searchTerm = query == null ? "" : query.trim().toLowerCase();
+        return getAllGroups(authHeader).stream()
+                .filter(group -> searchTerm.isEmpty()
+                        || (group.getGroupName() != null
+                                && group.getGroupName().toLowerCase().contains(searchTerm))
+                        || (group.getDescription() != null
+                                && group.getDescription().toLowerCase().contains(searchTerm)))
                 .toList();
     }
 
@@ -152,6 +181,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
+    @Transactional
     public void deleteGroup(String authHeader, UUID groupId) {
         User user = userService.getUserByAuth(authHeader);
         GroupMember groupMember = groupMemberRepository.findByGroupGroupIdAndUserUserId(groupId,user.getUserId()).orElseThrow(()->new ResourceNotFoundException(ExceptionConstants.USER_NOT_FOUND));
@@ -159,8 +189,9 @@ public class GroupServiceImpl implements GroupService {
             throw new UnauthorizedException(ExceptionConstants.USER_NOT_ALLOWED);
         }
 
-        List<GroupMember> members = groupMemberRepository.findByGroupGroupId(groupId);
-        members.forEach(groupMemberRepository::delete);
+        groupPrivateLinkRepository.deleteAllByGroupId(groupId);
+        groupShortLinkRepository.deleteAllByGroupId(groupId);
+        groupMemberRepository.deleteAllByGroupId(groupId);
         groupRepository.deleteById(groupId);
     }
 
@@ -168,7 +199,7 @@ public class GroupServiceImpl implements GroupService {
     public GroupsDTO getGroupById(String authHeader, UUID groupId) {
         User user = userService.getUserByAuth(authHeader);
         GroupMember member = groupMemberRepository.findByGroupGroupIdAndUserUserId(groupId,user.getUserId()).orElseThrow(()->new ResourceNotFoundException(ExceptionConstants.USER_NOT_FOUND)) ;
-        return groupMapper.mapToGroupDTO(member.getGroup());
+        return groupMapper.mapToGroupDTO(member.getGroup(), member.getRole());
 
     }
 

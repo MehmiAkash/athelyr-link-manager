@@ -25,6 +25,14 @@ public class GroupController {
     public ResponseEntity<List<GroupsDTO>> getAllGroups(@RequestHeader("Authorization")String authHeader){
         return ResponseEntity.ok(groupService.getAllGroups(authHeader));
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<GroupsDTO>> searchGroups(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam(defaultValue = "") String query
+    ) {
+        return ResponseEntity.ok(groupService.searchGroups(authHeader, query));
+    }
     @GetMapping("/{id}/members")
     public ResponseEntity<GroupResponseDTO> getAllUsersByGroup(@RequestHeader("Authorization")String authHeader , @PathVariable UUID id){
         return ResponseEntity.ok(groupService.getAllUsersByGroup(authHeader,id));

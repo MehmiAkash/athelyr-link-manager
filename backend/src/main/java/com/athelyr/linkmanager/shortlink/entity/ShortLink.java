@@ -27,6 +27,7 @@ public class ShortLink {
 
     private String title;
 
+    @Column(columnDefinition = "TEXT")
     private String url;
 
     @Column(unique = true)

@@ -21,12 +21,14 @@ public class GroupLinkMapper {
     }
     public SharedLinkResponseDTO mapToPrivateLinkResponse(LinkType linkType , GroupPrivateLink groupPrivateLink){
         SharedLinkResponseDTO sharedLinkResponseDTO = new SharedLinkResponseDTO();
+        sharedLinkResponseDTO.setGroupLinkId(groupPrivateLink.getId());
         sharedLinkResponseDTO.setLinkType(linkType);
 
         GroupPrivateLinkResponseDTO groupPrivateLinkResponseDTO = new GroupPrivateLinkResponseDTO();
 
         groupPrivateLinkResponseDTO.setPrivateLinkResponseDTO(privateLinkMapper.mapToResponse(groupPrivateLink.getPrivateLink()));
         groupPrivateLinkResponseDTO.setSharedBy(groupPrivateLink.getSharedBy().getName());
+        groupPrivateLinkResponseDTO.setSharedByUserId(groupPrivateLink.getSharedBy().getUserId());
         groupPrivateLinkResponseDTO.setSharedAt(groupPrivateLink.getSharedAt());
 
         sharedLinkResponseDTO.setGroupPrivateLinkResponseDTO(groupPrivateLinkResponseDTO);
@@ -35,12 +37,14 @@ public class GroupLinkMapper {
     }
     public SharedLinkResponseDTO mapToShortLinkResponse(LinkType linkType , GroupShortLink groupShortLink){
         SharedLinkResponseDTO sharedLinkResponseDTO = new SharedLinkResponseDTO();
+        sharedLinkResponseDTO.setGroupLinkId(groupShortLink.getId());
         sharedLinkResponseDTO.setLinkType(linkType);
 
         GroupShortLinkResponseDTO groupShortLinkResponseDTO = new GroupShortLinkResponseDTO();
 
         groupShortLinkResponseDTO.setShortLinkResponseDTO(shortLinkMapper.mapToResponse(groupShortLink.getShortLink()));
         groupShortLinkResponseDTO.setSharedBy(groupShortLink.getSharedBy().getName());
+        groupShortLinkResponseDTO.setSharedByUserId(groupShortLink.getSharedBy().getUserId());
         groupShortLinkResponseDTO.setSharedAt(groupShortLink.getSharedAt());
 
         sharedLinkResponseDTO.setGroupShortLinkResponseDTO(groupShortLinkResponseDTO);

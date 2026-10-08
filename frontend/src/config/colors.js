@@ -53,15 +53,6 @@ export const colors = {
         600: "#0891b2",
     },
 
-    yellow: {
-        100: "#fef9c3",
-        200: "#fef08a",
-        300: "#fde047",
-        400: "#facc15",
-        500: "#eab308",
-        600: "#ca8a04",
-    },
-
     purple: {
         100: "#f3e8ff",
         200: "#e9d5ff",

@@ -14,5 +14,7 @@ public class GroupShortLinkResponseDTO {
 
     private String sharedBy;
 
+    private UUID sharedByUserId;
+
     private Instant sharedAt;
 }

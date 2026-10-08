@@ -3,9 +3,11 @@ package com.athelyr.linkmanager.user.service;
 import com.athelyr.linkmanager.config.JwtService;
 import com.athelyr.linkmanager.constants.ExceptionConstants;
 import com.athelyr.linkmanager.exception.custom.BadRequestException;
+import com.athelyr.linkmanager.exception.custom.InvalidTokenException;
 import com.athelyr.linkmanager.exception.custom.ResourceAlreadyExistsException;
 import com.athelyr.linkmanager.exception.custom.ResourceNotFoundException;
 import com.athelyr.linkmanager.exception.custom.UnauthorizedException;
+import io.jsonwebtoken.JwtException;
 import com.athelyr.linkmanager.user.mapper.UserMapper;
 import com.athelyr.linkmanager.user.dto.*;
 import com.athelyr.linkmanager.user.entity.User;
@@ -56,7 +58,7 @@ public class UserServiceImpl implements UserService{
         if(updateProfileRequestDTO.getName()!=null && !updateProfileRequestDTO.getName().isBlank()) {
             user.setName(updateProfileRequestDTO.getName());
         }
-        if(updateProfileRequestDTO.getBio()!=null && !updateProfileRequestDTO.getBio().isBlank()) {
+        if(updateProfileRequestDTO.getBio()!=null) {
             user.setBio(updateProfileRequestDTO.getBio());
         }
         if(updateProfileRequestDTO.getDob()!=null ) {
@@ -78,13 +80,22 @@ public class UserServiceImpl implements UserService{
     @Override
     public User getUserByAuth(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new UnauthorizedException(ExceptionConstants.INVALID_CREDENTIALS);
+            throw new InvalidTokenException("Authentication token is missing or invalid");
         }
 
         String token = authHeader.substring(7);
-        String email =jwtService.extractEmail(token);
+        String email;
+        try {
+            email = jwtService.extractEmail(token);
+        } catch (JwtException | IllegalArgumentException exception) {
+            throw new InvalidTokenException("Authentication token is invalid or expired");
+        }
 
-        return getUserByEmail(email);
+        try {
+            return getUserByEmail(email);
+        } catch (ResourceNotFoundException exception) {
+            throw new InvalidTokenException("Authentication is no longer valid");
+        }
     }
 
     @Override

@@ -5,13 +5,11 @@ import {
   FaLink,
   FaUsers,
   FaChartBar,
-  FaStar,
 } from "react-icons/fa";
 import { HiMenu, HiX } from "react-icons/hi";
 
 const navItems = [
   { to: "/dashboard", icon: FaHome, label: "Dashboard" },
-  { to: "/favorites", icon: FaStar, label: "Favorites" },
   { to: "/mylinks", icon: FaLink, label: "My Links" },
   { to: "/grouplinks", icon: FaUsers, label: "Group Links" },
   { to: "/analytics", icon: FaChartBar, label: "Analytics" },
@@ -28,7 +26,7 @@ function TopNav() {
   };
 
   return (
-    <div className="md:hidden fixed top-2 left-2 z-50">
+    <div className="lg:hidden fixed top-2 left-2 z-50">
 
       <button
         onClick={() => {
@@ -38,12 +36,13 @@ function TopNav() {
         className="
           flex items-center justify-center
           w-11 h-11
-          bg-zinc-900
-          border border-zinc-700
+          bg-zinc-900/40
+          border border-zinc-500/30
           rounded-full
           text-white text-xl
           shadow-xl
-          hover:bg-zinc-800
+          backdrop-blur-xl
+          hover:bg-zinc-900/60
           hover:text-(--accent-300)
           active:scale-95
           transition
@@ -59,11 +58,12 @@ function TopNav() {
             mt-2
             flex flex-col 
             w-11
-            bg-zinc-900
-            border border-zinc-700
+            bg-zinc-900/40
+            border border-zinc-500/30
             rounded-2xl
             p-1
             shadow-xl
+            backdrop-blur-xl
           "
         >
           {navItems.map(({ to, icon: Icon, label }) => {
@@ -90,8 +90,8 @@ function TopNav() {
                     active:scale-95
                     transition
                     ${isActive
-                      ? "bg-zinc-700 text-(--accent-400)"
-                      : "text-white hover:bg-zinc-800 hover:text-(--accent-300)"
+                      ? "bg-white/15 text-(--accent-400)"
+                      : "text-white hover:bg-white/10 hover:text-(--accent-300)"
                     }
                   `}
                 >

@@ -1,6 +1,6 @@
 package com.athelyr.linkmanager.privatelink.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.athelyr.linkmanager.constants.ValidationMessages;
 import lombok.Data;
 import org.hibernate.validator.constraints.URL;
 
@@ -8,7 +8,7 @@ import org.hibernate.validator.constraints.URL;
 public class UpdatePrivateLinkRequestDTO {
     private String title;
 
-    @URL
+    @URL(message = ValidationMessages.INVALID_URL)
     private String url;
 
     private boolean favourite;

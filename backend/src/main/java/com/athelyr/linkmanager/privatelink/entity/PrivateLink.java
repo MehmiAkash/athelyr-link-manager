@@ -32,7 +32,7 @@ public class PrivateLink {
 
 
     private String title;
-
+    @Column(columnDefinition = "TEXT")
     private String url;
 
     private boolean favourite;

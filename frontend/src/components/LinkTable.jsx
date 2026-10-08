@@ -1,106 +1,93 @@
+import { useEffect, useRef, useState } from "react";
+
 import {
     FaCopy,
-    FaEdit,
-    FaTrash,
     FaStar,
+    FaRegStar,
+    FaLock,
+    FaUnlock,
 } from "react-icons/fa";
+import { useLinkManagement } from "../context/UseLinkManagement";
+import REDIRECT_URL from "../config/redirect";
+import Loader from "./Loader";
+import LinkActions from "./LinkActions";
+import { incrementCopyCountPrivateLink } from "../services/getLinksService";
+import { EMPTY_STATE_MESSAGES } from "../config/emptyStateMessages";
 
-
-function LinkTable({ linktype, showFavourite = false }) {
-
-    const shortLinks = [
-        {
-            slId: "1",
-            title: "Google jhgadhjghafgaihkhfbkjhabjhdagkhfgbakhjbfgkjhafghkjagfihjbakhfbakhdfbvhjbfv",
-            url: "https://google.com",
-            shortCode: "abc123",
-            favourite: true,
-            clickCount: 99999999999999,
-            createdAt: "2026-09-12T20:36:06.952Z",
-        },
-        {
-            slId: "2",
-            title: "GitHub",
-            url: "https://github.com",
-            shortCode: "git456",
-            favourite: false,
-            clickCount: 7,
-            createdAt: "2026-09-11T18:20:06.952Z",
-        },
-    ];
-
-    const privateLinks = [
-        {
-            plId: "1",
-            title: "My Private Page",
-            url: "https://example.com/private",
-            favourite: true,
-            copyCount: 8,
-            createdAt: "2026-09-12T20:38:45.776Z",
-        },
-        {
-            plId: "2",
-            title: "Important Document",
-            url: "https://example.com/documentadsadadasdasdsdad",
-            favourite: false,
-            copyCount: 3,
-            createdAt: "2026-09-11T16:20:45.776Z",
-        },
-    ];
-
-    const links = linktype === "short"
+function LinkTable({
+    linktype,
+    shortLinks,
+    privateLinks,
+    loading,
+    favoritesOnly = false,
+    searchQuery = "",
+    loadError = "",
+    hasMore = false,
+    loadingMore = false,
+    onLoadMore,
+}) {
+    const {  incrementClickCount , incrementCopyCount } = useLinkManagement();
+    const lastCopiedPrivateLink = useRef(null);
+    const rowsRef = useRef(null);
+    const loadMoreRef = useRef(null);
+    const links = loading
+        ? []
+        : linktype === "short"
         ? shortLinks
         : privateLinks;
 
+    const [revealedLinks, setRevealedLinks] = useState({});
 
     const getUrl = (link) => {
-
         if (linktype === "short") {
-            return `${window.location.origin}/${link.shortCode}`;
+            return `${REDIRECT_URL}/${link.shortCode}`;
         }
 
         return link.url;
     };
 
-
     const handleCopy = async (link) => {
-
-        const url = getUrl(link);
-
+        const linkId = link.slId || link.plId;
+        let url;
+        if (linktype === "short" && revealedLinks[linkId]) {
+            url = link.url;
+        } else {
+            url = getUrl(link);
+        }
         try {
-
             await navigator.clipboard.writeText(url);
-
+            if (linktype === "private") {
+                // Ignore consecutive clicks
+                // on the same private link.
+                if (lastCopiedPrivateLink.current === linkId) {
+                    return;
+                }
+                // Remember this link as the last copied link.
+                lastCopiedPrivateLink.current = linkId;
+                await incrementCopyCountPrivateLink(linkId);
+                incrementCopyCount(linkId);
+            }
             console.log("Copied:", url);
-
         } catch (error) {
-
             console.error("Copy failed:", error);
-
         }
     };
 
 
-    const handleEdit = (link) => {
-        console.log("Edit:", link);
+    const toggleOriginalUrl = (linkId) => {
+        setRevealedLinks((prev) => ({
+            ...prev,
+            [linkId]: !prev[linkId],
+        }));
     };
-
-
-    const handleDelete = (link) => {
-        console.log("Delete:", link);
-    };
-
 
     const formatDate = (date) => {
-
         return new Date(date).toLocaleDateString("en-IN", {
             day: "2-digit",
             month: "short",
             year: "numeric",
         });
-
     };
-
 
     /*
      * Desktop columns:
@@ -111,12 +98,10 @@ function LinkTable({ linktype, showFavourite = false }) {
      * Actions     -> minimum 75px
      */
     const gridCols =
-        "grid-cols-[1fr_0.3fr] lg:grid-cols-[minmax(120px,0.9fr)_minmax(150px,1.1fr)_minmax(70px,0.25fr)_minmax(85px,0.45fr)_minmax(75px,0.5fr)]";
+        "grid-cols-[1fr_0.3fr] lg:grid-cols-[minmax(120px,0.7fr)_minmax(150px,1.1fr)_minmax(70px,0.25fr)_minmax(85px,0.45fr)_minmax(75px,0.5fr)]";
 
-
-    // Reusable horizontal scroll style
     const scrollClasses = `
-        min-w-0
+        min-w-20
         max-w-full
         overflow-x-auto
         whitespace-nowrap
@@ -127,141 +112,193 @@ function LinkTable({ linktype, showFavourite = false }) {
         [&::-webkit-scrollbar-thumb]:rounded-full
     `;
 
-
-    // Reusable desktop column separator
     const columnBorderClass = `
         lg:border-r
         lg:border-zinc-800/70
         lg:pr-4
     `;
 
-
-    // Reusable scrollbar configuration
     const scrollbarStyle = {
         scrollbarWidth: "thin",
         scrollbarColor: "black transparent",
     };
 
+    useEffect(() => {
+        if (!hasMore || loading || loadingMore || links.length === 0) {
+            return undefined;
+        }
+
+        const sentinel = loadMoreRef.current;
+        if (!sentinel) {
+            return undefined;
+        }
+
+        const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries.some((entry) => entry.isIntersecting)) {
+                    onLoadMore?.();
+                }
+            },
+            {
+                root: isDesktop ? rowsRef.current : null,
+                rootMargin: "160px",
+            }
+        );
+        observer.observe(sentinel);
+
+        return () => observer.disconnect();
+    }, [hasMore, loading, loadingMore, links.length, onLoadMore]);
 
     return (
+        <div className="w-full px-4 pb-6 sm:px-6 lg:px-8">
 
-        <div className="w-full px-6 py-4 lg:px-4 lg:py-4">
+            {loading && links.length === 0 && <Loader/>}
 
             {/* Links */}
 
-            <div className="
-                w-full
-                min-w-0
-                bg-zinc-900/80
-                border border-zinc-800
-                rounded-3xl
-                overflow-hidden
-                shadow-xl
-            ">
+            <div
+                className="
+                    w-full
+                    min-w-0
+                    bg-zinc-900/80
+                    border border-zinc-800
+                    rounded-3xl
+                    overflow-hidden
+                    shadow-xl
+                    lg:max-h-[80vh]
+                "
+            >
 
                 {/* Header */}
 
-                <div className={`
-                    hidden
-                    lg:grid
-                    ${gridCols}
-                    gap-4
-                    items-center
-                    px-6
-                    py-4
-                    bg-zinc-950/70
-                    text-xs
-                    text-(--accent-400)
-                    uppercase
-                    tracking-wider
-                    sticky
-                    top-0
-                    z-10
-                `}>
+                {links.length > 0 && <div
+                    className={`
+                        hidden
+                        lg:grid
+                        ${gridCols}
+                        gap-4
+                        items-center
+                        px-6
+                        py-4
+                        bg-zinc-950/70
+                        text-xs
+                        text-(--accent-400)
+                        uppercase
+                        tracking-wider
+                        sticky
+                        top-0
+                        z-10
+                    `}
+                >
 
                     {/* Title */}
 
-                    <div className={`
-                        min-w-0
-                        flex
-                        items-center
-                        gap-2
-                        ${columnBorderClass}
-                    `}>
-
+                    <div
+                        className={`
+                            min-w-0
+                            ${columnBorderClass}
+                        `}
+                    >
                         <span>Title</span>
-
-                        {showFavourite && (
-                            <FaStar
-                                size={12}
-                                className="text-yellow-400"
-                            />
-                        )}
-
                     </div>
-
 
                     {/* Link */}
 
-                    <div className={`
-                        min-w-0
-                        ${columnBorderClass}
-                    `}>
-
+                    <div
+                        className={`
+                            min-w-0
+                            ${columnBorderClass}
+                        `}
+                    >
                         {linktype === "short"
                             ? "Short Link"
                             : "Private Link"
                         }
-
                     </div>
-
 
                     {/* Clicks / Copies */}
 
-                    <div className={`
-                        min-w-0
-                        ${columnBorderClass}
-                    `}>
-
+                    <div
+                        className={`
+                            min-w-0
+                            ${columnBorderClass}
+                        `}
+                    >
                         {linktype === "short"
                             ? "Clicks"
                             : "Copies"
                         }
-
                     </div>
-
 
                     {/* Created */}
 
-                    <div className={`
-                        min-w-0
-                        ${columnBorderClass}
-                    `}>
-
+                    <div
+                        className={`
+                            min-w-0
+                            ${columnBorderClass}
+                        `}
+                    >
                         Created
-
                     </div>
-
 
                     {/* Actions */}
 
                     <div></div>
 
-                </div>
+                </div>}
 
 
                 {/* Rows */}
 
-                <div className="max-h-[65vh] overflow-y-auto divide-y divide-zinc-800">
+                <div
+                    ref={rowsRef}
+                    className="
+                    divide-y
+                    divide-zinc-800
+                    lg:max-h-[calc(80vh-65px)]
+                    lg:overflow-y-auto
+                    lg:[&::-webkit-scrollbar]:w-1.5
+                    lg:[&::-webkit-scrollbar-track]:bg-zinc-950
+                    lg:[&::-webkit-scrollbar-thumb]:bg-zinc-700
+                    lg:[&::-webkit-scrollbar-thumb]:rounded-full
+                    pb-4
+                ">
 
-                    {links.map((link) => {
+                    {!loading && links.length === 0 ? (
+                        <p className="px-4 py-12 text-center text-sm text-zinc-400 sm:py-16">
+                            {loadError
+                                ? loadError
+                                : searchQuery
+                                ? EMPTY_STATE_MESSAGES.LINK_SEARCH
+                                : favoritesOnly
+                                ? EMPTY_STATE_MESSAGES.FAVORITES
+                                : linktype === "short"
+                                ? EMPTY_STATE_MESSAGES.SHORT_LINKS
+                                : EMPTY_STATE_MESSAGES.PRIVATE_LINKS}
+                        </p>
+                    ) : links.map((link) => {
 
                         const displayUrl = getUrl(link);
 
-                        return (
+                        const linkId = link.slId || link.plId;
 
+                        const isRevealed = revealedLinks[linkId];
+
+                        /*
+                         * Short links:
+                         *
+                         * Locked   -> short URL
+                         * Unlocked -> original URL
+                         */
+                        const activeUrl =
+                            linktype === "short" && isRevealed
+                                ? link.url
+                                : displayUrl;
+
+                        return (
                             <div
-                                key={link.slId || link.plId}
+                                key={linkId}
                                 className={`
                                     grid
                                     ${gridCols}
@@ -280,51 +317,74 @@ function LinkTable({ linktype, showFavourite = false }) {
 
                                 {/* Title */}
 
-                                <div className={`
-                                    min-w-0
-                                    order-1
-                                    lg:order-0
-                                    ${columnBorderClass}
-                                `}>
+                                <div
+                                    className={`
+                                        min-w-0
+                                        order-1
+                                        lg:order-0
+                                        ${columnBorderClass}
+                                    `}
+                                >
 
                                     {/* Mobile / Tablet Title */}
 
                                     <div className="
-                                        flex
-                                        items-center
-                                        gap-2
                                         lg:hidden
                                         text-xs
                                         text-zinc-300
                                         mb-0.5
                                     ">
-
-                                        <span>Title</span>
-
-                                        {showFavourite && (
-                                            <FaStar
-                                                size={10}
-                                                className="text-yellow-400"
-                                            />
-                                        )}
-
+                                        Title
                                     </div>
 
 
-                                    {/* Title Scroll */}
+                                    {/* Title + Favourite */}
 
                                     <div
-                                        className={scrollClasses}
+                                        className={`
+                                            ${scrollClasses}
+                                        `}
                                         style={scrollbarStyle}
                                     >
 
-                                        <span className="
-                                            text-sm
-                                            text-white
-                                            font-medium
+                                        <div className="
+                                            flex
+                                            items-center
+                                            gap-1.5
+                                            min-w-0
                                         ">
-                                            {link.title}
-                                        </span>
+
+                                            {/* Favourite Status */}
+
+                                            {link.favourite ? (
+                                                <FaStar
+                                                    size={10}
+                                                    className="
+                                                        shrink-0
+                                                        text-yellow-400
+                                                    "
+                                                />
+                                            ) : (
+                                                <FaRegStar
+                                                    size={10}
+                                                    className="
+                                                        shrink-0
+                                                        text-(--accent-400)
+                                                    "
+                                                />
+                                            )}
+
+                                            {/* Title */}
+
+                                            <span className="
+                                                text-sm
+                                                text-white
+                                                font-medium
+                                            ">
+                                                {link.title}
+                                            </span>
+
+                                        </div>
 
                                     </div>
 
@@ -333,14 +393,16 @@ function LinkTable({ linktype, showFavourite = false }) {
 
                                 {/* URL */}
 
-                                <div className={`
-                                    min-w-0
-                                    col-span-2
-                                    order-3
-                                    lg:order-0
-                                    lg:col-span-1
-                                    ${columnBorderClass}
-                                `}>
+                                <div
+                                    className={`
+                                        min-w-0
+                                        col-span-2
+                                        order-3
+                                        lg:order-0
+                                        lg:col-span-1
+                                        ${columnBorderClass}
+                                    `}
+                                >
 
                                     <p className="
                                         lg:hidden
@@ -364,6 +426,43 @@ function LinkTable({ linktype, showFavourite = false }) {
                                         min-w-0
                                     ">
 
+                                        {/* Lock / Unlock Button - Short Links Only */}
+
+                                        {linktype === "short" && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    toggleOriginalUrl(linkId)
+                                                }
+                                                aria-label={
+                                                    isRevealed
+                                                        ? "Show short URL"
+                                                        : "Show original URL"
+                                                }
+                                                className="
+                                                    shrink-0
+                                                    w-8
+                                                    h-8
+                                                    rounded-full
+                                                    flex
+                                                    items-center
+                                                    justify-center
+                                                    text-(--accent-500)
+                                                    hover:text-white
+                                                    hover:bg-zinc-800
+                                                    transition-all
+                                                    active:scale-90
+                                                "
+                                            >
+                                                {isRevealed ? (
+                                                    <FaUnlock size={13} />
+                                                ) : (
+                                                    <FaLock size={13} />
+                                                )}
+                                            </button>
+                                        )}
+
+
                                         {/* URL Scroll */}
 
                                         <div
@@ -377,45 +476,64 @@ function LinkTable({ linktype, showFavourite = false }) {
                                             {linktype === "short" ? (
 
                                                 <a
-                                                    href={displayUrl}
-                                                    className="
+                                                    href={activeUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    onClick={() => {
+                                                            if (linktype === "short" && !isRevealed) {
+                                                                incrementClickCount(linkId);
+                                                            }
+                                                        }}
+                                                    className={`
                                                         text-sm
-                                                        text-(--accent-300)
-                                                        hover:text-(--accent-200)
-                                                        hover:underline
                                                         whitespace-nowrap
-                                                    "
-                                                    title={displayUrl}
+                                                        hover:underline
+                                                        ${
+                                                            isRevealed
+                                                                ? "text-zinc-400 hover:text-zinc-300"
+                                                                : "text-(--accent-300) hover:text-(--accent-200)"
+                                                        }
+                                                    `}
+                                                    title={activeUrl}
                                                 >
-                                                    {displayUrl}
+                                                    {activeUrl}
                                                 </a>
 
                                             ) : (
 
-                                                <span
+                                                <a
+                                                    href={activeUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
                                                     className="
                                                         text-sm
                                                         text-zinc-400
+                                                        hover:text-zinc-300
+                                                        hover:underline
                                                         whitespace-nowrap
                                                     "
-                                                    title={displayUrl}
+                                                    title={activeUrl}
                                                 >
-                                                    {displayUrl}
-                                                </span>
+                                                    {activeUrl}
+                                                </a>
 
                                             )}
 
                                         </div>
 
 
-                                        {/* Copy Button - Fixed */}
+                                        {/* Copy Button */}
 
                                         <button
                                             type="button"
                                             onClick={() =>
                                                 handleCopy(link)
                                             }
-                                            aria-label="Copy link"
+                                            aria-label={
+                                                linktype === "short" && isRevealed
+                                                    ? "Copy original URL"
+                                                    : "Copy link"
+                                            }
                                             className="
                                                 shrink-0
                                                 w-8
@@ -424,7 +542,7 @@ function LinkTable({ linktype, showFavourite = false }) {
                                                 flex
                                                 items-center
                                                 justify-center
-                                                text-zinc-400
+                                                text-(--accent-500)
                                                 hover:text-white
                                                 hover:bg-zinc-800
                                                 transition-all
@@ -441,12 +559,14 @@ function LinkTable({ linktype, showFavourite = false }) {
 
                                 {/* Clicks / Copies */}
 
-                                <div className={`
-                                    order-2
-                                    lg:order-0
-                                    min-w-0
-                                    ${columnBorderClass}
-                                `}>
+                                <div
+                                    className={`
+                                        order-2
+                                        lg:order-0
+                                        min-w-0
+                                        ${columnBorderClass}
+                                    `}
+                                >
 
                                     <p className="
                                         lg:hidden
@@ -460,8 +580,6 @@ function LinkTable({ linktype, showFavourite = false }) {
                                         }
                                     </p>
 
-
-                                    {/* Clicks / Copies Scroll */}
 
                                     <div
                                         className={scrollClasses}
@@ -486,12 +604,14 @@ function LinkTable({ linktype, showFavourite = false }) {
 
                                 {/* Created */}
 
-                                <div className={`
-                                    order-4
-                                    lg:order-0
-                                    min-w-0
-                                    ${columnBorderClass}
-                                `}>
+                                <div
+                                    className={`
+                                        order-4
+                                        lg:order-0
+                                        min-w-0
+                                        ${columnBorderClass}
+                                    `}
+                                >
 
                                     <p className="
                                         lg:hidden
@@ -502,8 +622,6 @@ function LinkTable({ linktype, showFavourite = false }) {
                                         Created
                                     </p>
 
-
-                                    {/* Created Scroll */}
 
                                     <div
                                         className={scrollClasses}
@@ -523,89 +641,30 @@ function LinkTable({ linktype, showFavourite = false }) {
                                 </div>
 
 
-                                {/* Actions - NO SCROLL */}
+                                {/* Actions */}
 
-                                <div className="
-                                    order-5
-                                    lg:order-0
-                                    min-w-0
-                                ">
-
-                                    <div className="
-                                        flex
-                                        justify-end
-                                        items-center
-                                        gap-1
-                                        lg:-mr-1
-                                    ">
-
-                                        {/* Edit */}
-
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleEdit(link)
-                                            }
-                                            aria-label="Edit link"
-                                            className="
-                                                shrink-0
-                                                w-9
-                                                h-9
-                                                rounded-full
-                                                flex
-                                                items-center
-                                                justify-center
-                                                text-(--accent-500)
-                                                hover:text-white
-                                                hover:bg-zinc-800
-                                                transition-all
-                                                active:scale-90
-                                            "
-                                        >
-                                            <FaEdit size={14} />
-                                        </button>
-
-
-                                        {/* Delete */}
-
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleDelete(link)
-                                            }
-                                            aria-label="Delete link"
-                                            className="
-                                                shrink-0
-                                                w-9
-                                                h-9
-                                                rounded-full
-                                                flex
-                                                items-center
-                                                justify-center
-                                                text-(--accent-600)
-                                                hover:text-white
-                                                hover:bg-zinc-800
-                                                transition-all
-                                                active:scale-90
-                                            "
-                                        >
-                                            <FaTrash size={13} />
-                                        </button>
-
-                                    </div>
-
-                                </div>
+                                <LinkActions
+                                    linkType={linktype}
+                                    link={link}
+                                />
+                                
 
                             </div>
-
                         );
-
                     })}
+                    {hasMore && links.length > 0 && (
+                        <div
+                            ref={loadMoreRef}
+                            className="py-3 text-center text-xs text-zinc-500"
+                            aria-live="polite"
+                        >
+                            {loadingMore ? "Loading more links..." : ""}
+                        </div>
+                    )}
 
                 </div>
 
             </div>
-
         </div>
     );
 }

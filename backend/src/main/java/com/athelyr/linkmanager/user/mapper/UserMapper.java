@@ -22,6 +22,8 @@ public class UserMapper {
         UserSearchResponseDTO response = new UserSearchResponseDTO();
         response.setName(user.getName());
         response.setEmail(user.getEmail());
+        response.setProfileImageUrl(user.getProfileImageUrl());
+        response.setBio(user.getBio());
         return response;
     }
 }

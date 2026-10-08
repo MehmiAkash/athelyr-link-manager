@@ -1,6 +1,7 @@
 package com.athelyr.linkmanager.exception.handler;
 
 import com.athelyr.linkmanager.exception.dto.ErrorResponse;
+import com.athelyr.linkmanager.exception.custom.InvalidTokenException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -27,6 +28,15 @@ public class GlobalExceptionHandler {
         response.setMessage(message);
         response.setTimeStamp(Instant.now());
         return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidToken(InvalidTokenException ex) {
+        ErrorResponse response = new ErrorResponse();
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        response.setMessage(ex.getMessage());
+        response.setTimeStamp(Instant.now());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(RuntimeException.class)

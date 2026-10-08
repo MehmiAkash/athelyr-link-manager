@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+
 import { useTheme } from "../context/useTheme";
 import { colors } from "../config/colors";
 
 function ColorPicker() {
     const [open, setOpen] = useState(false);
     const { accentColor, setAccentColor } = useTheme();
-
     const pickerRef = useRef(null);
 
     const colorNames = Object.keys(colors);
@@ -35,20 +35,20 @@ function ColorPicker() {
     return (
         <div ref={pickerRef} className="relative inline-block">
 
-            {/* Current color */}
+            {/* Color picker trigger */}
             <button
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
+                aria-label="Choose theme color"
                 className="
-                    w-3 h-3
+                    w-4 h-4
                     rounded-full
-                    border border-zinc-600
+                    border border-zinc-500
+                    bg-[conic-gradient(from_0deg,red,yellow,lime,cyan,blue,magenta,red)]
                     hover:scale-110
+                    active:scale-95
                     transition
                 "
-                style={{
-                    backgroundColor: colors[accentColor][500],
-                }}
             />
 
             {/* Color popup */}

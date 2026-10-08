@@ -1,43 +1,17 @@
-import { useState } from "react";
-import LogoutPopup from "./LogoutPopup";
+import { Link } from "react-router-dom";
+import ProfileAvatar from "./ProfileAvatar";
 
 function Profile({ user }) {
-    const [open, setOpen] = useState(false);
-
     return (
-        <>
-            <button
-                type="button"
-                onClick={() => setOpen(true)}
-                className="
-                    w-10 h-10
-                    rounded-full
-                    overflow-hidden
-                    border border-zinc-700
-                    hover:border-zinc-500
-                    active:scale-95
-                    transition
-                    bg-zinc-800
-                "
-            >
-                {user?.profileImageUrl ? (
-                    <img
-                        src={user.profileImageUrl}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs text-zinc-400">
-                        {user?.name?.charAt(0)?.toUpperCase()}
-                    </div>
-                )}
-            </button>
-
-            {open && (
-                <LogoutPopup onClose={() => setOpen(false)} />
-            )}
-        </>
+        <Link
+            to="/profile"
+            aria-label="Open profile"
+            title="Profile"
+            className="rounded-full transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-(--accent-400)"
+        >
+            <ProfileAvatar user={user} className="h-10 w-10 border-zinc-700 text-xs" />
+        </Link>
     );
-} 
+}
 
 export default Profile;

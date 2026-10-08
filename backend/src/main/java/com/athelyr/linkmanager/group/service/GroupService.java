@@ -12,11 +12,11 @@ public interface GroupService {
     GroupResponseDTO removeUserFromGroup(String authHeader,UUID groupId,GroupMemberRequestDTO groupMemberRequestDTO );
     GroupResponseDTO updateUserRole(String authHeader , UUID groupId, GroupMemberRequestDTO groupMemberRequestDTO);
     List<GroupsDTO> getAllGroups(String authHeader );
+    List<GroupsDTO> searchGroups(String authHeader, String query);
     GroupResponseDTO getAllUsersByGroup(String authHeader ,UUID groupId);
     void  deleteGroup(String authHeader,UUID groupId);
     GroupsDTO getGroupById(String authHeader,UUID GroupId);
 }
-
 
 
 

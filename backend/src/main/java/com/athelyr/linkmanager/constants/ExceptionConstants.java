@@ -21,4 +21,7 @@ public final class ExceptionConstants {
     public static final String USER_ALREADY_EXISTS = "User with email already exists";
 
     public static final String OWNER_CANNOT_LEAVE = "Owner cannot leave the group";
+    public static final String LINK_TITLE_ALREADY_EXISTS = "Link title already exists";
+    public static final String LINK_SHARED_WITH_GROUPS =
+            "This link is shared with one or more groups. Remove it from all groups before deleting it.";
 }

@@ -1,5 +1,6 @@
 package com.athelyr.linkmanager.group.dto;
 
+import com.athelyr.linkmanager.constants.Role;
 import lombok.Data;
 
 import java.time.Instant;
@@ -14,4 +15,6 @@ public class GroupsDTO {
     private String description;
 
     private Instant createdAt;
+
+    private Role role;
 }

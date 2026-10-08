@@ -4,7 +4,6 @@ import Logo from "./Logo";
 import {
   FaHome,
   FaLink,
-  FaStar,
   FaUsers,
   FaBars,
   FaTimes,
@@ -13,7 +12,6 @@ import { FaChartBar } from "react-icons/fa6";
 
 const navItems = [
   { to: "/dashboard", icon: FaHome, label: "Dashboard" },
-  { to: "/favorites", icon: FaStar, label: "Favorites" },
   { to: "/mylinks", icon: FaLink, label: "My Links" },
   { to: "/grouplinks", icon: FaUsers, label: "Group Links" },
   { to: "/analytics", icon: FaChartBar, label: "Analytics" },
@@ -42,6 +40,7 @@ function Sidebar() {
           ${open ? "w-16" : "w-0"} 
 
           md:static md:w-64 md:min-h-screen
+          lg:sticky lg:top-0 lg:h-screen lg:min-h-0
         `}
       >
         <div className="hidden md:block px-6 py-3 border-b border-zinc-700">

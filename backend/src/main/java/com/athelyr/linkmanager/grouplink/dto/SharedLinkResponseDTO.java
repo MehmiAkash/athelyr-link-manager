@@ -1,12 +1,14 @@
 package com.athelyr.linkmanager.grouplink.dto;
 
 import com.athelyr.linkmanager.constants.LinkType;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+
+import java.util.UUID;
 
 @Data
 public class SharedLinkResponseDTO {
-    @NotBlank
+    private UUID groupLinkId;
+
     private LinkType linkType;
 
     private GroupPrivateLinkResponseDTO groupPrivateLinkResponseDTO;

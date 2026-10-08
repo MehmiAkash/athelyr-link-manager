@@ -4,11 +4,15 @@ import com.athelyr.linkmanager.shortlink.dto.ShortLinkRequestDTO;
 import com.athelyr.linkmanager.shortlink.dto.ShortLinkResponseDTO;
 import com.athelyr.linkmanager.shortlink.dto.UpdateShortLinkRequestDTO;
 import com.athelyr.linkmanager.shortlink.service.ShortLinkService;
+import com.athelyr.linkmanager.config.OffsetPageRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -23,6 +27,35 @@ public class ShortLinkController {
     @GetMapping
     public ResponseEntity<List<ShortLinkResponseDTO>> getShortLinkByUser(@RequestHeader("Authorization")String authHeader){
         return ResponseEntity.ok(shortLinkService.getShortLinksByUser(authHeader));
+    }
+
+    @GetMapping("/page")
+    public ResponseEntity<?> getShortLinksPage(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam(defaultValue = "0") long offset,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) Boolean favourite,
+            @RequestParam(defaultValue = "") String search
+    ) {
+        if (offset < 0 || size < 1 || size > 100 || search.length() > 200) {
+            return ResponseEntity.badRequest().build();
+        }
+        Page<ShortLinkResponseDTO> result = shortLinkService.getShortLinksByUser(
+                authHeader,
+                new OffsetPageRequest(
+                        offset,
+                        size,
+                        Sort.by(Sort.Direction.DESC, "createdAt")
+                                .and(Sort.by(Sort.Direction.DESC, "slId"))
+                ),
+                favourite,
+                search
+        );
+        return ResponseEntity.ok(Map.of(
+                "content", result.getContent(),
+                "hasNext", offset + result.getNumberOfElements() < result.getTotalElements(),
+                "totalElements", result.getTotalElements()
+        ));
     }
 
     @PostMapping

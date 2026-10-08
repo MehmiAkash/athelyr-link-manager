@@ -4,11 +4,15 @@ import com.athelyr.linkmanager.privatelink.dto.PrivateLinkRequestDTO;
 import com.athelyr.linkmanager.privatelink.dto.PrivateLinkResponseDTO;
 import com.athelyr.linkmanager.privatelink.dto.UpdatePrivateLinkRequestDTO;
 import com.athelyr.linkmanager.privatelink.service.PrivateLinkService;
+import com.athelyr.linkmanager.config.OffsetPageRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -24,6 +28,35 @@ public class PrivateLinkController {
     public ResponseEntity<List<PrivateLinkResponseDTO>> getPrivateLinkByUser(@RequestHeader("Authorization")String authHeader ){
         return ResponseEntity.ok(privateLinkService.getPrivateLinkByUser(authHeader));
         }
+
+    @GetMapping("/page")
+    public ResponseEntity<?> getPrivateLinksPage(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam(defaultValue = "0") long offset,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) Boolean favourite,
+            @RequestParam(defaultValue = "") String search
+    ) {
+        if (offset < 0 || size < 1 || size > 100 || search.length() > 200) {
+            return ResponseEntity.badRequest().build();
+        }
+        Page<PrivateLinkResponseDTO> result = privateLinkService.getPrivateLinkByUser(
+                authHeader,
+                new OffsetPageRequest(
+                        offset,
+                        size,
+                        Sort.by(Sort.Direction.DESC, "createdAt")
+                                .and(Sort.by(Sort.Direction.DESC, "plId"))
+                ),
+                favourite,
+                search
+        );
+        return ResponseEntity.ok(Map.of(
+                "content", result.getContent(),
+                "hasNext", offset + result.getNumberOfElements() < result.getTotalElements(),
+                "totalElements", result.getTotalElements()
+        ));
+    }
 
     @PostMapping
     public ResponseEntity<PrivateLinkResponseDTO> addPrivateLink(@RequestHeader("Authorization")String authHeader ,

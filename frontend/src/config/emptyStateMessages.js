@@ -1,0 +1,16 @@
+export const EMPTY_STATE_MESSAGES = {
+    SHORT_LINKS: "No short links yet. Create a short link to get started.",
+    PRIVATE_LINKS: "No private links yet. Create a private link to get started.",
+    FAVORITES: "No favorite links yet.",
+    LINK_SEARCH: "No links match your search.",
+    LINK_USAGE: "No link usage recorded yet.",
+    USAGE: (usageLabel) => `No ${usageLabel} recorded yet.`,
+    GROUP_SEARCH: "No groups match your search.",
+    GROUPS: "No groups yet. Create one to get started.",
+    SHARED_LINK_SEARCH: "No shared links match your search.",
+    SHARED_LINKS: "No links have been shared with this group yet.",
+    GROUP_MEMBERS: "No group members found.",
+    GROUPS_TO_SHARE: "There are no other groups to share with.",
+    USERS: "No users found.",
+    BIO: "No bio added",
+};
